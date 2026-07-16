@@ -28,25 +28,29 @@ function ensureStylesheet() {
 }
 
 function ensureUi() {
-  const pdfPanel = document.querySelector("#pdfPanel");
-  if (!pdfPanel) return null;
+  const host = document.querySelector("#pageRailContent");
+  if (!host) return null;
   let section = document.querySelector("#pdfThumbnailSection");
   if (section) return section;
 
-  section = document.createElement("details");
+  section = document.createElement("section");
   section.id = "pdfThumbnailSection";
   section.className = "pdf-thumbnail-section is-hidden";
-  section.open = true;
   section.innerHTML = `
-    <summary>
-      <span>ページ一覧</span>
-      <span id="pdfThumbnailCount" class="pdf-thumbnail-count">0</span>
-    </summary>
     <p id="pdfThumbnailStatus" class="pdf-thumbnail-status">PDFを読み込んでいます…</p>
     <div id="pdfThumbnailList" class="pdf-thumbnail-list" aria-label="PDFページ一覧"></div>
   `;
-  pdfPanel.append(section);
+  host.append(section);
   return section;
+}
+
+function setRailAvailable(available) {
+  const rail = document.querySelector("#pageRail");
+  const trigger = document.querySelector("#pageRailHeaderButton");
+  rail?.classList.toggle("is-hidden", !available);
+  trigger?.classList.toggle("is-hidden", !available);
+  document.body.classList.toggle("has-page-rail", available);
+  if (!available) document.body.classList.remove("page-rail-collapsed", "mobile-pages-open");
 }
 
 function clearThumbnails({ hide = false } = {}) {
@@ -62,7 +66,7 @@ function clearThumbnails({ hide = false } = {}) {
   if (status) status.textContent = "PDFを読み込んでいます…";
   const count = document.querySelector("#pdfThumbnailCount");
   if (count) count.textContent = "0";
-  if (hide) document.querySelector("#pdfThumbnailSection")?.classList.add("is-hidden");
+  if (hide) setRailAvailable(false);
 }
 
 function syncActivePage() {
@@ -73,7 +77,7 @@ function syncActivePage() {
     if (active) button.setAttribute("aria-current", "page");
     else button.removeAttribute("aria-current");
     if (active && button.dataset.userSelected === "true") {
-      button.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      button.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" });
       delete button.dataset.userSelected;
     }
   }
@@ -88,8 +92,8 @@ async function renderThumbnail(button, pageNumber, generation) {
     const page = await state.pdfDocument.getPage(pageNumber);
     if (generation !== state.generation) return;
     const baseViewport = page.getViewport({ scale: 1 });
-    const maxWidth = 120;
-    const maxHeight = 150;
+    const maxWidth = 132;
+    const maxHeight = 164;
     const scale = Math.min(maxWidth / baseViewport.width, maxHeight / baseViewport.height);
     const viewport = page.getViewport({ scale });
     const canvas = button.querySelector("canvas");
@@ -125,10 +129,15 @@ function observeThumbnailButtons(list, generation) {
     list.addEventListener(
       "scroll",
       () => {
+        const listRect = list.getBoundingClientRect();
         for (const button of buttons) {
-          const listRect = list.getBoundingClientRect();
           const buttonRect = button.getBoundingClientRect();
-          if (buttonRect.bottom >= listRect.top - 160 && buttonRect.top <= listRect.bottom + 160) {
+          if (
+            buttonRect.bottom >= listRect.top - 160 &&
+            buttonRect.top <= listRect.bottom + 160 &&
+            buttonRect.right >= listRect.left - 160 &&
+            buttonRect.left <= listRect.right + 160
+          ) {
             renderThumbnail(button, Number(button.dataset.pdfThumbnailPage), generation);
           }
         }
@@ -148,7 +157,7 @@ function observeThumbnailButtons(list, generation) {
         renderThumbnail(button, pageNumber, generation);
       }
     },
-    { root: list, rootMargin: "180px 0px", threshold: 0.01 },
+    { root: list, rootMargin: "180px", threshold: 0.01 },
   );
 
   for (const button of buttons) state.observer.observe(button);
@@ -182,6 +191,9 @@ function buildThumbnailPlaceholders(pageCount, generation) {
       input.value = String(pageNumber);
       input.dispatchEvent(new Event("change", { bubbles: true }));
       syncActivePage();
+      if (window.matchMedia("(max-width: 900px)").matches) {
+        document.body.classList.remove("mobile-pages-open");
+      }
     });
     fragment.append(button);
   }
@@ -200,6 +212,7 @@ async function loadPdfThumbnails(file) {
   }
 
   clearThumbnails();
+  setRailAvailable(true);
   section.classList.remove("is-hidden");
   const generation = state.generation;
   const status = document.querySelector("#pdfThumbnailStatus");
