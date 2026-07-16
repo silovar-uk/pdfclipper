@@ -1,6 +1,7 @@
 const body = document.body;
 const pageRail = document.querySelector("#pageRail");
 const sidebar = document.querySelector(".sidebar");
+const sidebarScroll = document.querySelector(".sidebar-scroll");
 const backdrop = document.querySelector("#panelBackdrop");
 const desktopPageButton = document.querySelector("#pageRailHeaderButton");
 const pageCloseButton = document.querySelector("#pageRailCloseButton");
@@ -59,12 +60,11 @@ function clickOriginal(selector) {
 
 function mirrorButton(target, source, { copyText = true } = {}) {
   if (!target) return;
-  if (!source) {
-    target.disabled = true;
-    return;
-  }
-  target.disabled = Boolean(source.disabled);
-  if (copyText) target.textContent = source.textContent?.trim() || target.textContent;
+  const nextDisabled = !source || Boolean(source.disabled);
+  if (target.disabled !== nextDisabled) target.disabled = nextDisabled;
+  if (!source || !copyText) return;
+  const nextText = source.textContent?.trim();
+  if (nextText && target.textContent !== nextText) target.textContent = nextText;
 }
 
 function syncActionButtons() {
@@ -119,8 +119,8 @@ const pageObserver = new MutationObserver(syncPageRailState);
 if (pageRail) pageObserver.observe(pageRail, { attributes: true, attributeFilter: ["class"] });
 
 const actionsObserver = new MutationObserver(syncActionButtons);
-if (sidebar) {
-  actionsObserver.observe(sidebar, {
+if (sidebarScroll) {
+  actionsObserver.observe(sidebarScroll, {
     subtree: true,
     childList: true,
     attributes: true,
