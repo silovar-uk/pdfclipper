@@ -53,7 +53,9 @@ function clearThumbnails({ hide = false } = {}) {
   state.generation += 1;
   state.observer?.disconnect();
   state.observer = null;
+  const previousDocument = state.pdfDocument;
   state.pdfDocument = null;
+  previousDocument?.destroy?.().catch?.(() => {});
   state.renderedPages.clear();
   document.querySelector("#pdfThumbnailList")?.replaceChildren();
   const status = document.querySelector("#pdfThumbnailStatus");
@@ -68,7 +70,8 @@ function syncActivePage() {
   for (const button of document.querySelectorAll("[data-pdf-thumbnail-page]")) {
     const active = Number(button.dataset.pdfThumbnailPage) === currentPage;
     button.classList.toggle("is-active", active);
-    button.setAttribute("aria-current", active ? "page" : "false");
+    if (active) button.setAttribute("aria-current", "page");
+    else button.removeAttribute("aria-current");
     if (active && button.dataset.userSelected === "true") {
       button.scrollIntoView({ block: "nearest", behavior: "smooth" });
       delete button.dataset.userSelected;
@@ -95,10 +98,13 @@ async function renderThumbnail(button, pageNumber, generation) {
     canvas.height = Math.max(1, Math.round(viewport.height * dpr));
     canvas.style.aspectRatio = `${viewport.width} / ${viewport.height}`;
     const context = canvas.getContext("2d", { alpha: false });
-    context.setTransform(dpr, 0, 0, dpr, 0, 0);
     context.fillStyle = "#ffffff";
-    context.fillRect(0, 0, viewport.width, viewport.height);
-    await page.render({ canvasContext: context, viewport }).promise;
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    await page.render({
+      canvasContext: context,
+      viewport,
+      transform: dpr === 1 ? null : [dpr, 0, 0, dpr, 0, 0],
+    }).promise;
     if (generation !== state.generation) return;
     button.classList.add("is-rendered");
   } catch (error) {
@@ -108,6 +114,44 @@ async function renderThumbnail(button, pageNumber, generation) {
   } finally {
     delete button.dataset.loading;
   }
+}
+
+function observeThumbnailButtons(list, generation) {
+  const buttons = [...list.querySelectorAll("[data-pdf-thumbnail-page]")];
+  if (!("IntersectionObserver" in window)) {
+    buttons.forEach((button, index) => {
+      if (index < 12) renderThumbnail(button, Number(button.dataset.pdfThumbnailPage), generation);
+    });
+    list.addEventListener(
+      "scroll",
+      () => {
+        for (const button of buttons) {
+          const listRect = list.getBoundingClientRect();
+          const buttonRect = button.getBoundingClientRect();
+          if (buttonRect.bottom >= listRect.top - 160 && buttonRect.top <= listRect.bottom + 160) {
+            renderThumbnail(button, Number(button.dataset.pdfThumbnailPage), generation);
+          }
+        }
+      },
+      { passive: true },
+    );
+    return;
+  }
+
+  state.observer = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        const button = entry.target;
+        const pageNumber = Number(button.dataset.pdfThumbnailPage);
+        state.observer.unobserve(button);
+        renderThumbnail(button, pageNumber, generation);
+      }
+    },
+    { root: list, rootMargin: "180px 0px", threshold: 0.01 },
+  );
+
+  for (const button of buttons) state.observer.observe(button);
 }
 
 function buildThumbnailPlaceholders(pageCount, generation) {
@@ -142,24 +186,8 @@ function buildThumbnailPlaceholders(pageCount, generation) {
     fragment.append(button);
   }
   list.append(fragment);
-
   state.observer?.disconnect();
-  state.observer = new IntersectionObserver(
-    (entries) => {
-      for (const entry of entries) {
-        if (!entry.isIntersecting) continue;
-        const button = entry.target;
-        const pageNumber = Number(button.dataset.pdfThumbnailPage);
-        state.observer.unobserve(button);
-        renderThumbnail(button, pageNumber, generation);
-      }
-    },
-    { root: list, rootMargin: "180px 0px", threshold: 0.01 },
-  );
-
-  for (const button of list.querySelectorAll("[data-pdf-thumbnail-page]")) {
-    state.observer.observe(button);
-  }
+  observeThumbnailButtons(list, generation);
   syncActivePage();
 }
 
