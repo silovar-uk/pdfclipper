@@ -1,12 +1,19 @@
+import {
+  clamp,
+  constrainCropToSource,
+  cropsEqual,
+  DEFAULT_MIN_CROP_SIZE,
+} from "../core/geometry.js";
+
 export const advanced = window.PDFClipperAdvanced;
-export const MIN_CROP_SIZE = 4;
+export const MIN_CROP_SIZE = DEFAULT_MIN_CROP_SIZE;
 export const HANDLE_THRESHOLD = 14;
 export const ADVANCED_SETTINGS_KEY = "pdfclipper-advanced-v1";
 export const JSZIP_URL = "https://cdn.jsdelivr.net/npm/jszip@3.10.1/+esm";
+export const PDFJS_URL = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs";
+export const PDFJS_WORKER_URL = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs";
 
-export function clamp(value, min, max) {
-  return Math.min(Math.max(value, min), max);
-}
+export { clamp, cropsEqual };
 
 export function readNumber(input) {
   const value = Number(input?.value);
@@ -42,26 +49,9 @@ export function readCrop() {
   };
 }
 
-export function cropsEqual(a, b, tolerance = 0.1) {
-  if (!a || !b) return false;
-  return (
-    Math.abs(a.x - b.x) < tolerance &&
-    Math.abs(a.y - b.y) < tolerance &&
-    Math.abs(a.width - b.width) < tolerance &&
-    Math.abs(a.height - b.height) < tolerance
-  );
-}
-
 export function constrainCrop(crop, source = readSourceSize()) {
   if (!source) return crop;
-  const width = clamp(Math.abs(crop.width), MIN_CROP_SIZE, source.width);
-  const height = clamp(Math.abs(crop.height), MIN_CROP_SIZE, source.height);
-  return {
-    x: clamp(crop.x, 0, source.width - width),
-    y: clamp(crop.y, 0, source.height - height),
-    width,
-    height,
-  };
+  return constrainCropToSource(crop, source, { minSize: MIN_CROP_SIZE });
 }
 
 export function writeCrop(crop, { record = true } = {}) {
