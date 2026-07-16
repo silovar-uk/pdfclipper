@@ -13,6 +13,7 @@ import {
   recordHistory,
 } from "./history-transform.js";
 import { disposeOutputTools, initializeOutputTools } from "./output.js";
+import { disposePdfThumbnails, initializePdfThumbnails } from "./thumbnails.js";
 
 function initializeAdvancedFeatures() {
   Document.prototype.createElement = advanced.originalCreateElement;
@@ -23,6 +24,7 @@ function initializeAdvancedFeatures() {
   initializeAlignmentButtons();
   initializeTransformControls();
   initializeOutputTools();
+  initializePdfThumbnails();
   initializeHistory();
   initializeShiftInteractions();
   initializePdfRotationPersistence();
@@ -31,4 +33,7 @@ function initializeAdvancedFeatures() {
 }
 
 initializeAdvancedFeatures();
-window.addEventListener("beforeunload", disposeOutputTools);
+window.addEventListener("beforeunload", () => {
+  disposeOutputTools();
+  disposePdfThumbnails();
+});
