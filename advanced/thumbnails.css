@@ -1,0 +1,136 @@
+.pdf-thumbnail-section {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.pdf-thumbnail-section > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  cursor: pointer;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 700;
+  list-style: none;
+}
+
+.pdf-thumbnail-section > summary::-webkit-details-marker {
+  display: none;
+}
+
+.pdf-thumbnail-section > summary::before {
+  content: "▾";
+  color: var(--muted);
+  transition: transform 160ms ease;
+}
+
+.pdf-thumbnail-section:not([open]) > summary::before {
+  transform: rotate(-90deg);
+}
+
+.pdf-thumbnail-count {
+  min-width: 24px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--surface-3);
+  color: var(--muted);
+  text-align: center;
+  font-size: 10px;
+}
+
+.pdf-thumbnail-status {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.pdf-thumbnail-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  max-height: 360px;
+  margin-top: 10px;
+  padding: 2px 3px 4px 2px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.pdf-thumbnail-button {
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 6px;
+  background: var(--surface-2);
+  color: var(--muted);
+  text-align: center;
+  transition:
+    border-color 140ms ease,
+    background 140ms ease,
+    transform 140ms ease;
+}
+
+.pdf-thumbnail-button:not(:disabled):hover {
+  border-color: #596170;
+  background: var(--surface-3);
+}
+
+.pdf-thumbnail-button:active {
+  transform: translateY(1px);
+}
+
+.pdf-thumbnail-button.is-active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+  color: var(--text);
+}
+
+.pdf-thumbnail-canvas-wrap {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  min-height: 94px;
+  overflow: hidden;
+  border-radius: 5px;
+  background:
+    linear-gradient(135deg, rgb(255 255 255 / 4%) 25%, transparent 25%) 0 0 / 12px 12px,
+    linear-gradient(315deg, rgb(255 255 255 / 4%) 25%, transparent 25%) 0 0 / 12px 12px,
+    #0e1014;
+}
+
+.pdf-thumbnail-button canvas {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  max-height: 132px;
+  background: #ffffff;
+  opacity: 0;
+  transition: opacity 160ms ease;
+}
+
+.pdf-thumbnail-button.is-rendered canvas {
+  opacity: 1;
+}
+
+.pdf-thumbnail-button.has-error .pdf-thumbnail-canvas-wrap::after {
+  content: "読込失敗";
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.pdf-thumbnail-label {
+  display: block;
+  margin-top: 5px;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 900px) {
+  .pdf-thumbnail-list {
+    grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+    max-height: 280px;
+  }
+}
