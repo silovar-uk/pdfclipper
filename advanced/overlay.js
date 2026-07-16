@@ -1,9 +1,9 @@
+import { resizeSymmetricCrop } from "../core/geometry.js";
 import {
   advanced,
   clamp,
   constrainCrop,
   HANDLE_THRESHOLD,
-  MIN_CROP_SIZE,
   readAspectRatio,
   readCrop,
   readSourceSize,
@@ -119,46 +119,6 @@ function hitTest(point, rect) {
   return { type: "none" };
 }
 
-function resizeSymmetrically(handle, startCrop, dx, dy, source, ratio) {
-  const centerX = startCrop.x + startCrop.width / 2;
-  const centerY = startCrop.y + startCrop.height / 2;
-  const maxHalfWidth = Math.min(centerX, source.width - centerX);
-  const maxHalfHeight = Math.min(centerY, source.height - centerY);
-  let halfWidth = startCrop.width / 2;
-  let halfHeight = startCrop.height / 2;
-
-  if (handle.includes("w")) halfWidth -= dx;
-  if (handle.includes("e")) halfWidth += dx;
-  if (handle.includes("n")) halfHeight -= dy;
-  if (handle.includes("s")) halfHeight += dy;
-
-  halfWidth = clamp(halfWidth, MIN_CROP_SIZE / 2, maxHalfWidth);
-  halfHeight = clamp(halfHeight, MIN_CROP_SIZE / 2, maxHalfHeight);
-
-  if (ratio && handle.length === 2) {
-    if (halfWidth / halfHeight > ratio) halfHeight = halfWidth / ratio;
-    else halfWidth = halfHeight * ratio;
-    if (halfWidth > maxHalfWidth) {
-      halfWidth = maxHalfWidth;
-      halfHeight = halfWidth / ratio;
-    }
-    if (halfHeight > maxHalfHeight) {
-      halfHeight = maxHalfHeight;
-      halfWidth = halfHeight * ratio;
-    }
-  }
-
-  return constrainCrop(
-    {
-      x: centerX - halfWidth,
-      y: centerY - halfHeight,
-      width: halfWidth * 2,
-      height: halfHeight * 2,
-    },
-    source,
-  );
-}
-
 export function initializeShiftInteractions() {
   const canvas = document.querySelector("#editorCanvas");
   if (!canvas) return;
@@ -241,14 +201,14 @@ export function initializeShiftInteractions() {
         );
       } else {
         writeCrop(
-          resizeSymmetrically(
-            interaction.handle,
-            interaction.startCrop,
+          resizeSymmetricCrop({
+            handle: interaction.handle,
+            startCrop: interaction.startCrop,
             dx,
             dy,
-            interaction.source,
-            readAspectRatio(),
-          ),
+            source: interaction.source,
+            ratio: readAspectRatio(),
+          }),
           { record: false },
         );
       }
