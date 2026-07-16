@@ -1,7 +1,9 @@
 // PDF Clipper advanced bootstrap.
-// Runs before app.js to keep a reference to the editor's private source canvas.
+// Runs before app.js to retain the private source canvas and source file.
 const advanced = {
   sourceCanvas: null,
+  sourceFile: null,
+  sourceVersion: 0,
   pdfRotation: 0,
   imageRotation: 0,
   applyingRotation: false,
@@ -21,6 +23,42 @@ advanced.originalCreateElement = originalCreateElement;
 advanced.originalDrawImage = originalDrawImage;
 advanced.originalStrokeRect = originalStrokeRect;
 window.PDFClipperAdvanced = advanced;
+
+function rememberSourceFile(file) {
+  if (!(file instanceof File)) return;
+  advanced.sourceFile = file;
+  advanced.sourceVersion += 1;
+  window.dispatchEvent(
+    new CustomEvent("pdfclipper:source-file", {
+      detail: { file, version: advanced.sourceVersion },
+    }),
+  );
+}
+
+// Capture before app.js clears the file input after starting its own load.
+document.addEventListener(
+  "change",
+  (event) => {
+    if (event.target?.id !== "fileInput") return;
+    rememberSourceFile(event.target.files?.[0]);
+  },
+  true,
+);
+
+window.addEventListener(
+  "drop",
+  (event) => rememberSourceFile(event.dataTransfer?.files?.[0]),
+  true,
+);
+
+window.addEventListener(
+  "paste",
+  (event) => {
+    const item = [...(event.clipboardData?.items || [])].find((entry) => entry.kind === "file");
+    rememberSourceFile(item?.getAsFile());
+  },
+  true,
+);
 
 Document.prototype.createElement = function (tagName, options) {
   const element = originalCreateElement.call(this, tagName, options);
