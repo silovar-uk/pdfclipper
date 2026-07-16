@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#101114" />
+    <meta
+      name="description"
+      content="画像やPDFの必要な部分だけをブラウザ上で切り抜き、PNG・JPGで保存できるツール"
+    />
+    <title>PDF Clipper</title>
+    <link rel="icon" href="./icon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="app-header">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true">⌗</span>
+          <div>
+            <h1>PDF Clipper</h1>
+            <p>画像・PDFの必要な部分だけを書き出す</p>
+          </div>
+        </div>
+
+        <div class="header-actions">
+          <button id="openButton" class="button button-secondary" type="button">
+            ファイルを開く
+          </button>
+          <button id="fitButton" class="button button-ghost" type="button" disabled>
+            全体表示
+          </button>
+          <button id="exportHeaderButton" class="button button-primary" type="button" disabled>
+            書き出す
+          </button>
+        </div>
+      </header>
+
+      <main class="main-layout">
+        <section class="workspace" aria-label="切り抜き編集画面">
+          <div id="dropZone" class="drop-zone">
+            <div class="drop-content">
+              <div class="drop-icon" aria-hidden="true">＋</div>
+              <h2>画像またはPDFをここにドロップ</h2>
+              <p>PNG / JPG / WebP / PDF</p>
+              <button id="dropOpenButton" class="button button-primary" type="button">
+                ファイルを選択
+              </button>
+              <span>画像は Ctrl / Command + V でも貼り付け可能</span>
+            </div>
+          </div>
+
+          <div id="editorArea" class="editor-area is-hidden">
+            <div id="canvasWrap" class="canvas-wrap">
+              <canvas id="editorCanvas" aria-label="切り抜き対象"></canvas>
+              <div id="loadingOverlay" class="loading-overlay is-hidden" role="status">
+                <span class="spinner" aria-hidden="true"></span>
+                <span id="loadingText">読み込み中…</span>
+              </div>
+            </div>
+
+            <div class="zoom-toolbar" aria-label="表示倍率">
+              <button id="zoomOutButton" type="button" aria-label="縮小">−</button>
+              <button id="zoomLabelButton" type="button" title="全体表示">100%</button>
+              <button id="zoomInButton" type="button" aria-label="拡大">＋</button>
+              <button id="panModeButton" type="button" aria-label="画像移動モード" aria-pressed="false" title="画像移動モード">✋</button>
+            </div>
+          </div>
+
+          <div id="statusBar" class="status-bar">
+            ファイルはサーバーへ送信されません。すべてブラウザ内で処理します。
+          </div>
+        </section>
+
+        <aside class="sidebar" aria-label="切り抜き・出力設定">
+          <section class="panel file-panel">
+            <div class="panel-title-row">
+              <h2>ファイル</h2>
+              <button id="replaceButton" class="text-button" type="button" disabled>変更</button>
+            </div>
+            <p id="fileName" class="file-name">未選択</p>
+            <p id="fileMeta" class="meta-text">画像またはPDFを選択してください</p>
+          </section>
+
+          <section id="pdfPanel" class="panel is-hidden">
+            <h2>PDFページ</h2>
+            <div class="page-controls">
+              <button id="prevPageButton" type="button" aria-label="前のページ">‹</button>
+              <label>
+                <span class="sr-only">ページ番号</span>
+                <input id="pageNumberInput" type="number" min="1" value="1" />
+              </label>
+              <span id="pageCountLabel">/ 1</span>
+              <button id="nextPageButton" type="button" aria-label="次のページ">›</button>
+            </div>
+            <label class="field">
+              <span>描画解像度</span>
+              <select id="pdfDpiSelect">
+                <option value="150" selected>150 dpi（標準）</option>
+                <option value="300">300 dpi（高画質）</option>
+              </select>
+            </label>
+          </section>
+
+          <section class="panel">
+            <div class="panel-title-row">
+              <h2>切り抜き範囲</h2>
+              <button id="resetCropButton" class="text-button" type="button" disabled>中央に戻す</button>
+            </div>
+
+            <div class="coordinate-grid">
+              <label>
+                <span>X</span>
+                <input id="cropXInput" type="number" min="0" step="1" disabled />
+              </label>
+              <label>
+                <span>Y</span>
+                <input id="cropYInput" type="number" min="0" step="1" disabled />
+              </label>
+              <label>
+                <span>幅</span>
+                <input id="cropWidthInput" type="number" min="1" step="1" disabled />
+              </label>
+              <label>
+                <span>高さ</span>
+                <input id="cropHeightInput" type="number" min="1" step="1" disabled />
+              </label>
+            </div>
+
+            <label class="field">
+              <span>縦横比</span>
+              <select id="aspectRatioSelect" disabled>
+                <option value="free">自由</option>
+                <option value="1">1 : 1</option>
+                <option value="1.3333333333">4 : 3</option>
+                <option value="1.5">3 : 2</option>
+                <option value="1.7777777778">16 : 9</option>
+                <option value="source">元画像と同じ</option>
+              </select>
+            </label>
+
+            <p class="help-text">
+              枠の内側をドラッグして移動。四隅・四辺をドラッグしてサイズ変更。
+            </p>
+          </section>
+
+          <section class="panel">
+            <h2>出力設定</h2>
+
+            <div class="two-column-fields">
+              <label class="field">
+                <span>形式</span>
+                <select id="formatSelect" disabled>
+                  <option value="png">PNG</option>
+                  <option value="jpeg">JPG</option>
+                </select>
+              </label>
+
+              <label class="field">
+                <span>倍率</span>
+                <select id="exportScaleSelect" disabled>
+                  <option value="1">1倍</option>
+                  <option value="2">2倍</option>
+                  <option value="3">3倍</option>
+                </select>
+              </label>
+            </div>
+
+            <label id="qualityField" class="field is-hidden">
+              <span class="range-label">JPG品質 <output id="qualityOutput">92%</output></span>
+              <input id="qualityRange" type="range" min="50" max="100" value="92" />
+            </label>
+
+            <label id="backgroundField" class="field is-hidden">
+              <span>JPG背景色</span>
+              <div class="color-field">
+                <input id="backgroundColorInput" type="color" value="#ffffff" />
+                <input id="backgroundColorText" type="text" value="#ffffff" maxlength="7" />
+              </div>
+            </label>
+
+            <label class="field">
+              <span>ファイル名</span>
+              <input id="outputNameInput" type="text" value="clip" disabled />
+            </label>
+
+            <div class="output-summary">
+              <span>出力サイズ</span>
+              <strong id="outputSizeLabel">—</strong>
+            </div>
+
+            <button id="exportButton" class="button button-primary button-full" type="button" disabled>
+              PNGで書き出す
+            </button>
+          </section>
+
+          <details class="panel shortcuts-panel">
+            <summary>ショートカット</summary>
+            <dl>
+              <div><dt>Ctrl / ⌘ + O</dt><dd>ファイルを開く</dd></div>
+              <div><dt>矢印</dt><dd>範囲を1px移動</dd></div>
+              <div><dt>Shift + 矢印</dt><dd>範囲を10px移動</dd></div>
+              <div><dt>Space + ドラッグ</dt><dd>画像を移動</dd></div>
+              <div><dt>0</dt><dd>全体表示</dd></div>
+              <div><dt>1</dt><dd>100%表示</dd></div>
+              <div><dt>Enter</dt><dd>書き出す</dd></div>
+            </dl>
+          </details>
+        </aside>
+      </main>
+    </div>
+
+    <input
+      id="fileInput"
+      type="file"
+      accept="image/png,image/jpeg,image/webp,application/pdf,.png,.jpg,.jpeg,.webp,.pdf"
+      hidden
+    />
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
