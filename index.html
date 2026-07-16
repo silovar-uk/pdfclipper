@@ -12,6 +12,7 @@
     <link rel="icon" href="./icon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="./styles.css" />
     <link rel="stylesheet" href="./enhancements.css" />
+    <link rel="stylesheet" href="./layout.css" />
   </head>
   <body>
     <div class="app-shell">
@@ -25,6 +26,9 @@
         </div>
 
         <div class="header-actions">
+          <button id="pageRailHeaderButton" class="button button-ghost page-rail-trigger is-hidden" type="button">
+            ページ
+          </button>
           <button id="openButton" class="button button-secondary" type="button">
             ファイルを開く
           </button>
@@ -38,6 +42,17 @@
       </header>
 
       <main class="main-layout">
+        <aside id="pageRail" class="page-rail is-hidden" aria-label="PDFページ一覧">
+          <div class="page-rail-header">
+            <div class="page-rail-title">
+              <span>ページ</span>
+              <strong id="pdfThumbnailCount">0</strong>
+            </div>
+            <button id="pageRailCloseButton" class="panel-close-button" type="button" aria-label="ページ一覧を閉じる">‹</button>
+          </div>
+          <div id="pageRailContent" class="page-rail-content"></div>
+        </aside>
+
         <section class="workspace" aria-label="切り抜き編集画面">
           <div id="dropZone" class="drop-zone">
             <div class="drop-content">
@@ -74,158 +89,182 @@
         </section>
 
         <aside class="sidebar" aria-label="切り抜き・出力設定">
-          <section class="panel file-panel">
-            <div class="panel-title-row">
-              <h2>ファイル</h2>
-              <button id="replaceButton" class="text-button" type="button" disabled>変更</button>
-            </div>
-            <p id="fileName" class="file-name">未選択</p>
-            <p id="fileMeta" class="meta-text">画像またはPDFを選択してください</p>
-          </section>
+          <div class="sidebar-topbar">
+            <strong>設定</strong>
+            <button id="sidebarCloseButton" class="panel-close-button" type="button" aria-label="設定を閉じる">×</button>
+          </div>
 
-          <section id="pdfPanel" class="panel is-hidden">
-            <h2>PDFページ</h2>
-            <div class="page-controls">
-              <button id="prevPageButton" type="button" aria-label="前のページ">‹</button>
-              <label>
-                <span class="sr-only">ページ番号</span>
-                <input id="pageNumberInput" type="number" min="1" value="1" />
-              </label>
-              <span id="pageCountLabel">/ 1</span>
-              <button id="nextPageButton" type="button" aria-label="次のページ">›</button>
-            </div>
-            <label class="field">
-              <span>描画解像度</span>
-              <select id="pdfDpiSelect">
-                <option value="150" selected>150 dpi（標準）</option>
-                <option value="300">300 dpi（高画質）</option>
-              </select>
-            </label>
-          </section>
-
-          <section class="panel">
-            <div class="panel-title-row">
-              <h2>切り抜き範囲</h2>
-              <button id="resetCropButton" class="text-button" type="button" disabled>中央に戻す</button>
-            </div>
-
-            <div class="coordinate-grid">
-              <label>
-                <span>X</span>
-                <input id="cropXInput" type="number" min="0" step="1" disabled />
-              </label>
-              <label>
-                <span>Y</span>
-                <input id="cropYInput" type="number" min="0" step="1" disabled />
-              </label>
-              <label>
-                <span>幅</span>
-                <input id="cropWidthInput" type="number" min="1" step="1" disabled />
-              </label>
-              <label>
-                <span>高さ</span>
-                <input id="cropHeightInput" type="number" min="1" step="1" disabled />
-              </label>
-            </div>
-
-            <label class="field">
-              <span>縦横比</span>
-              <select id="aspectRatioSelect" disabled>
-                <option value="free">自由</option>
-                <option value="1">1 : 1</option>
-                <option value="1.3333333333">4 : 3</option>
-                <option value="1.5">3 : 2</option>
-                <option value="1.7777777778">16 : 9</option>
-                <option value="source">元画像と同じ</option>
-              </select>
-            </label>
-
-            <div class="alignment-controls" aria-label="切り抜き範囲の整列">
-              <div class="alignment-row">
-                <span class="alignment-label">横</span>
-                <button class="alignment-button" type="button" data-align-crop="left" disabled>左</button>
-                <button class="alignment-button" type="button" data-align-crop="center-x" disabled>中央</button>
-                <button class="alignment-button" type="button" data-align-crop="right" disabled>右</button>
+          <div class="sidebar-scroll">
+            <section class="panel file-panel">
+              <div class="panel-title-row">
+                <h2>ファイル</h2>
+                <button id="replaceButton" class="text-button" type="button" disabled>変更</button>
               </div>
-              <div class="alignment-row">
-                <span class="alignment-label">縦</span>
-                <button class="alignment-button" type="button" data-align-crop="top" disabled>上</button>
-                <button class="alignment-button" type="button" data-align-crop="center-y" disabled>中央</button>
-                <button class="alignment-button" type="button" data-align-crop="bottom" disabled>下</button>
+              <p id="fileName" class="file-name">未選択</p>
+              <p id="fileMeta" class="meta-text">画像またはPDFを選択してください</p>
+            </section>
+
+            <section id="pdfPanel" class="panel is-hidden">
+              <h2>PDFページ</h2>
+              <div class="page-controls">
+                <button id="prevPageButton" type="button" aria-label="前のページ">‹</button>
+                <label>
+                  <span class="sr-only">ページ番号</span>
+                  <input id="pageNumberInput" type="number" min="1" value="1" />
+                </label>
+                <span id="pageCountLabel">/ 1</span>
+                <button id="nextPageButton" type="button" aria-label="次のページ">›</button>
               </div>
-            </div>
-
-            <p class="help-text">
-              枠内ドラッグで移動。Shift＋枠内ドラッグで水平・垂直移動。Shift＋ハンドル操作で中心を保ったまま対称にサイズ変更。
-            </p>
-          </section>
-
-          <section class="panel">
-            <h2>出力設定</h2>
-
-            <div class="two-column-fields">
               <label class="field">
-                <span>形式</span>
-                <select id="formatSelect" disabled>
-                  <option value="png">PNG</option>
-                  <option value="jpeg">JPG</option>
+                <span>描画解像度</span>
+                <select id="pdfDpiSelect">
+                  <option value="150" selected>150 dpi（標準）</option>
+                  <option value="300">300 dpi（高画質）</option>
+                </select>
+              </label>
+            </section>
+
+            <section class="panel">
+              <div class="panel-title-row">
+                <h2>切り抜き範囲</h2>
+                <button id="resetCropButton" class="text-button" type="button" disabled>中央に戻す</button>
+              </div>
+
+              <div class="coordinate-grid">
+                <label>
+                  <span>X</span>
+                  <input id="cropXInput" type="number" min="0" step="1" disabled />
+                </label>
+                <label>
+                  <span>Y</span>
+                  <input id="cropYInput" type="number" min="0" step="1" disabled />
+                </label>
+                <label>
+                  <span>幅</span>
+                  <input id="cropWidthInput" type="number" min="1" step="1" disabled />
+                </label>
+                <label>
+                  <span>高さ</span>
+                  <input id="cropHeightInput" type="number" min="1" step="1" disabled />
+                </label>
+              </div>
+
+              <label class="field">
+                <span>縦横比</span>
+                <select id="aspectRatioSelect" disabled>
+                  <option value="free">自由</option>
+                  <option value="1">1 : 1</option>
+                  <option value="1.3333333333">4 : 3</option>
+                  <option value="1.5">3 : 2</option>
+                  <option value="1.7777777778">16 : 9</option>
+                  <option value="source">元画像と同じ</option>
                 </select>
               </label>
 
-              <label class="field">
-                <span>倍率</span>
-                <select id="exportScaleSelect" disabled>
-                  <option value="1">1倍</option>
-                  <option value="2">2倍</option>
-                  <option value="3">3倍</option>
-                </select>
-              </label>
-            </div>
-
-            <label id="qualityField" class="field is-hidden">
-              <span class="range-label">JPG品質 <output id="qualityOutput">92%</output></span>
-              <input id="qualityRange" type="range" min="50" max="100" value="92" />
-            </label>
-
-            <label id="backgroundField" class="field is-hidden">
-              <span>JPG背景色</span>
-              <div class="color-field">
-                <input id="backgroundColorInput" type="color" value="#ffffff" />
-                <input id="backgroundColorText" type="text" value="#ffffff" maxlength="7" />
+              <div class="alignment-controls" aria-label="切り抜き範囲の整列">
+                <div class="alignment-row">
+                  <span class="alignment-label">横</span>
+                  <button class="alignment-button" type="button" data-align-crop="left" disabled>左</button>
+                  <button class="alignment-button" type="button" data-align-crop="center-x" disabled>中央</button>
+                  <button class="alignment-button" type="button" data-align-crop="right" disabled>右</button>
+                </div>
+                <div class="alignment-row">
+                  <span class="alignment-label">縦</span>
+                  <button class="alignment-button" type="button" data-align-crop="top" disabled>上</button>
+                  <button class="alignment-button" type="button" data-align-crop="center-y" disabled>中央</button>
+                  <button class="alignment-button" type="button" data-align-crop="bottom" disabled>下</button>
+                </div>
               </div>
-            </label>
 
-            <label class="field">
-              <span>ファイル名</span>
-              <input id="outputNameInput" type="text" value="clip" disabled />
-            </label>
+              <p class="help-text">
+                枠内ドラッグで移動。Shift＋枠内ドラッグで水平・垂直移動。Shift＋ハンドル操作で中心を保ったまま対称にサイズ変更。
+              </p>
+            </section>
 
-            <div class="output-summary">
-              <span>出力サイズ</span>
-              <strong id="outputSizeLabel">—</strong>
+            <section class="panel output-panel">
+              <h2>出力設定</h2>
+
+              <div class="two-column-fields">
+                <label class="field">
+                  <span>形式</span>
+                  <select id="formatSelect" disabled>
+                    <option value="png">PNG</option>
+                    <option value="jpeg">JPG</option>
+                  </select>
+                </label>
+
+                <label class="field">
+                  <span>倍率</span>
+                  <select id="exportScaleSelect" disabled>
+                    <option value="1">1倍</option>
+                    <option value="2">2倍</option>
+                    <option value="3">3倍</option>
+                  </select>
+                </label>
+              </div>
+
+              <label id="qualityField" class="field is-hidden">
+                <span class="range-label">JPG品質 <output id="qualityOutput">92%</output></span>
+                <input id="qualityRange" type="range" min="50" max="100" value="92" />
+              </label>
+
+              <label id="backgroundField" class="field is-hidden">
+                <span>JPG背景色</span>
+                <div class="color-field">
+                  <input id="backgroundColorInput" type="color" value="#ffffff" />
+                  <input id="backgroundColorText" type="text" value="#ffffff" maxlength="7" />
+                </div>
+              </label>
+
+              <label class="field">
+                <span>ファイル名</span>
+                <input id="outputNameInput" type="text" value="clip" disabled />
+              </label>
+
+              <div class="output-summary">
+                <span>出力サイズ</span>
+                <strong id="outputSizeLabel">—</strong>
+              </div>
+
+              <button id="exportButton" class="button button-primary button-full" type="button" disabled>
+                PNGで書き出す
+              </button>
+            </section>
+
+            <details class="panel shortcuts-panel">
+              <summary>ショートカット</summary>
+              <dl>
+                <div><dt>Ctrl / ⌘ + O</dt><dd>ファイルを開く</dd></div>
+                <div><dt>矢印</dt><dd>範囲を1px移動</dd></div>
+                <div><dt>Shift + 矢印</dt><dd>範囲を10px移動</dd></div>
+                <div><dt>Shift + 枠内ドラッグ</dt><dd>水平・垂直に移動</dd></div>
+                <div><dt>Shift + ハンドル</dt><dd>中心基準で対称変更</dd></div>
+                <div><dt>Space + ドラッグ</dt><dd>画像を移動</dd></div>
+                <div><dt>0</dt><dd>全体表示</dd></div>
+                <div><dt>1</dt><dd>100%表示</dd></div>
+                <div><dt>Enter</dt><dd>書き出す</dd></div>
+              </dl>
+            </details>
+          </div>
+
+          <div class="sidebar-dock" aria-label="書き出し操作">
+            <div class="sidebar-dock-secondary">
+              <button id="dockCopyButton" class="button button-secondary" type="button" disabled>PNGをコピー</button>
+              <button id="dockAddButton" class="button button-secondary" type="button" disabled>候補に追加</button>
             </div>
-
-            <button id="exportButton" class="button button-primary button-full" type="button" disabled>
-              PNGで書き出す
-            </button>
-          </section>
-
-          <details class="panel shortcuts-panel">
-            <summary>ショートカット</summary>
-            <dl>
-              <div><dt>Ctrl / ⌘ + O</dt><dd>ファイルを開く</dd></div>
-              <div><dt>矢印</dt><dd>範囲を1px移動</dd></div>
-              <div><dt>Shift + 矢印</dt><dd>範囲を10px移動</dd></div>
-              <div><dt>Shift + 枠内ドラッグ</dt><dd>水平・垂直に移動</dd></div>
-              <div><dt>Shift + ハンドル</dt><dd>中心基準で対称変更</dd></div>
-              <div><dt>Space + ドラッグ</dt><dd>画像を移動</dd></div>
-              <div><dt>0</dt><dd>全体表示</dd></div>
-              <div><dt>1</dt><dd>100%表示</dd></div>
-              <div><dt>Enter</dt><dd>書き出す</dd></div>
-            </dl>
-          </details>
+            <button id="dockExportButton" class="button button-primary" type="button" disabled>PNGで書き出す</button>
+          </div>
         </aside>
       </main>
+
+      <div id="panelBackdrop" class="panel-backdrop" aria-hidden="true"></div>
+
+      <nav class="mobile-nav" aria-label="モバイル操作">
+        <button id="mobilePagesButton" type="button" disabled><span>▤</span>ページ</button>
+        <button id="mobileSettingsButton" type="button"><span>⚙</span>設定</button>
+        <button id="mobileQueueButton" type="button"><span>▣</span>候補</button>
+        <button id="mobileExportButton" class="mobile-nav-primary" type="button" disabled><span>↓</span>書出</button>
+      </nav>
     </div>
 
     <input
@@ -239,5 +278,6 @@
 
     <script src="./enhancements.js"></script>
     <script type="module" src="./app.js"></script>
+    <script type="module" src="./layout.js"></script>
   </body>
 </html>
