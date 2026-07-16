@@ -13,6 +13,9 @@
 - クリップボードからの画像貼り付け
 - PDFのページ移動
 - PDFの150dpi / 300dpi描画
+- PDFページのサムネイル一覧
+- 表示中のページをサムネイル上で強調表示
+- 見えているサムネイルだけを描画する遅延読み込み
 
 ### 切り抜き編集
 
@@ -39,9 +42,10 @@
 ## 基本的な使い方
 
 1. 画像またはPDFを読み込みます。
-2. 必要な範囲をドラッグで選択します。
-3. 必要に応じて整列、回転、余白削除、縦横比を調整します。
-4. 形式や倍率を選び、「書き出す」を押します。
+2. PDFの場合は「ページ一覧」のサムネイルから対象ページを選べます。
+3. 必要な範囲をドラッグで選択します。
+4. 必要に応じて整列、回転、余白削除、縦横比を調整します。
+5. 形式や倍率を選び、「書き出す」を押します。
 
 複数箇所を書き出す場合は、それぞれの範囲で「候補に追加」を押し、最後に「ZIPでまとめて保存」を使用します。候補へ追加した時点の形式・倍率・品質で画像が生成されます。
 
@@ -55,6 +59,19 @@ python -m http.server 8000
 ```
 
 ブラウザで `http://localhost:8000` を開きます。
+
+## テスト
+
+Node.js 20以上で実行します。外部パッケージのインストールは不要です。
+
+```bash
+npm test
+npm run check
+```
+
+- `npm test`：切り抜き座標、回転、解像度変更時の座標変換、対称リサイズを確認
+- `npm run check`：すべてのJavaScriptファイルの構文を確認
+- `main`へのpushとPull RequestではGitHub Actionsが自動実行
 
 ## GitHub Pagesで公開
 
@@ -84,6 +101,7 @@ python -m http.server 8000
 - Vanilla JavaScript
 - ES Modules
 - Canvas API
+- Node.js標準テストランナー
 - PDF.js（PDF描画時にCDNから読み込み）
 - JSZip（ZIP作成時にCDNから読み込み）
 
@@ -95,19 +113,30 @@ styles.css
 enhancements.css
 app.js
 enhancements.js
+package.json
+core/
+  geometry.js
 advanced/
   init.js
   shared.js
   overlay.js
   history-transform.js
   output.js
+  thumbnails.js
+  thumbnails.css
+tests/
+  geometry.test.js
+.github/
+  workflows/
+    test.yml
 ```
 
-`app.js`が基本的な読み込み・編集・書き出しを担当し、`advanced/`以下が履歴、回転、余白削除、グリッド、複数候補、ZIP出力などの発展機能を担当します。
+`app.js`が基本的な読み込み・編集・書き出しを担当します。`core/geometry.js`はブラウザに依存しない座標計算を担当し、Node.jsの自動テスト対象です。`advanced/`以下は履歴、回転、余白削除、グリッド、PDFサムネイル、複数候補、ZIP出力などの発展機能を担当します。
 
 ## 注意事項
 
 - 「PNGをコピー」はClipboard APIを使用するため、GitHub PagesなどのHTTPS環境での利用を推奨します。
 - PDF.jsとJSZipは必要な操作を行った時点でCDNから読み込みます。
+- PDFサムネイルは表示範囲の近くにあるページから順に描画します。
 - 非常に大きなPDFや出力画像は、ブラウザのCanvas上限に合わせて制限される場合があります。
 - 余白の自動削除は四隅の色を背景として推定します。四隅に主要な図柄がある画像では、手動調整を併用してください。
