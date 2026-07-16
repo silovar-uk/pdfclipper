@@ -11,6 +11,7 @@
     <title>PDF Clipper</title>
     <link rel="icon" href="./icon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./enhancements.css" />
   </head>
   <body>
     <div class="app-shell">
@@ -139,8 +140,23 @@
               </select>
             </label>
 
+            <div class="alignment-controls" aria-label="切り抜き範囲の整列">
+              <div class="alignment-row">
+                <span class="alignment-label">横</span>
+                <button class="alignment-button" type="button" data-align-crop="left" disabled>左</button>
+                <button class="alignment-button" type="button" data-align-crop="center-x" disabled>中央</button>
+                <button class="alignment-button" type="button" data-align-crop="right" disabled>右</button>
+              </div>
+              <div class="alignment-row">
+                <span class="alignment-label">縦</span>
+                <button class="alignment-button" type="button" data-align-crop="top" disabled>上</button>
+                <button class="alignment-button" type="button" data-align-crop="center-y" disabled>中央</button>
+                <button class="alignment-button" type="button" data-align-crop="bottom" disabled>下</button>
+              </div>
+            </div>
+
             <p class="help-text">
-              枠の内側をドラッグして移動。四隅・四辺をドラッグしてサイズ変更。
+              枠内ドラッグで移動。Shift＋枠内ドラッグで水平・垂直移動。Shift＋ハンドル操作で中心を保ったまま対称にサイズ変更。
             </p>
           </section>
 
@@ -200,6 +216,8 @@
               <div><dt>Ctrl / ⌘ + O</dt><dd>ファイルを開く</dd></div>
               <div><dt>矢印</dt><dd>範囲を1px移動</dd></div>
               <div><dt>Shift + 矢印</dt><dd>範囲を10px移動</dd></div>
+              <div><dt>Shift + 枠内ドラッグ</dt><dd>水平・垂直に移動</dd></div>
+              <div><dt>Shift + ハンドル</dt><dd>中心基準で対称変更</dd></div>
               <div><dt>Space + ドラッグ</dt><dd>画像を移動</dd></div>
               <div><dt>0</dt><dd>全体表示</dd></div>
               <div><dt>1</dt><dd>100%表示</dd></div>
@@ -219,6 +237,7 @@
 
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
+    <script src="./enhancements.js"></script>
     <script type="module" src="./app.js"></script>
   </body>
 </html>
