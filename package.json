@@ -1,0 +1,13 @@
+{
+  "name": "pdfclipper",
+  "version": "0.3.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "check": "node --check app.js && node --check enhancements.js && node --check core/geometry.js && node --check advanced/init.js && node --check advanced/shared.js && node --check advanced/overlay.js && node --check advanced/history-transform.js && node --check advanced/output.js && node --check advanced/thumbnails.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
